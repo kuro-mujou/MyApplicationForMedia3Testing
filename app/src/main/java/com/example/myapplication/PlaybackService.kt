@@ -16,6 +16,7 @@ import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
@@ -44,7 +45,7 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         val player = TtsPlayer(Looper.getMainLooper(), this)
-    //        val player = ExoPlayer.Builder(this).build()
+//        val player = ExoPlayer.Builder(this).build()
 //        val forwardingPlayer = object : ForwardingPlayer(player) {
 //            override fun getDuration(): Long {
 //                return C.TIME_UNSET
@@ -177,8 +178,12 @@ class PlaybackService : MediaSessionService() {
             controller: MediaSession.ControllerInfo,
             mediaItems: List<MediaItem>
         ): ListenableFuture<List<MediaItem>> {
-            mediaSession.player.addMediaItems(mediaItems)
-            return Futures.immediateFuture(mediaItems)
+            val updatedMediaItems = mediaItems.map { mediaItem ->
+                mediaItem.buildUpon()
+                    .setUri(mediaItem.requestMetadata.mediaUri)
+                    .build()
+            }
+            return Futures.immediateFuture(updatedMediaItems)
         }
         override fun onSetMediaItems(
             mediaSession: MediaSession,
@@ -187,7 +192,6 @@ class PlaybackService : MediaSessionService() {
             startIndex: Int,
             startPositionMs: Long
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
-            mediaSession.player.setMediaItems(mediaItems, startIndex, startPositionMs)
             return Futures.immediateFuture(MediaSession.MediaItemsWithStartPosition(mediaItems, startIndex, startPositionMs))
         }
     }
